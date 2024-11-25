@@ -2,13 +2,13 @@
 
 # Default parameters
 SRA_ID=""
-BIN_SIZE=0
+BIN_SIZE=128
 
 # Function to display help
 function show_help() {
     echo "Usage: $0 --sra_id <SRA_ID> --bin_size <BIN_SIZE>"
     echo
-    echo "Description: This script subsets orientations from .pairs.gz files and creates .cool files."
+    echo "Description: This script creates .cool files from .pairs.gz files and performs zoomify for multi-resolution aggregation."
     echo "Options:"
     echo "  --sra_id        The SRA ID to process (required)."
     echo "  --bin_size      Bin size for cooler cload (required)."
@@ -38,65 +38,29 @@ fi
 
 echo "Processing SRA ID: ${SRA_ID} with bin size: ${BIN_SIZE}"
 
-# Step 1: Subsetting orientations
-echo "Subsetting orientations..."
+# Step 1: Create .cool file
+echo "Creating .cool file with bin size ${BIN_SIZE}..."
+cooler cload pairs \
+    --chrom1 2 \
+    --pos1 3 \
+    --chrom2 4 \
+    --pos2 5 \
+    ${SRA_ID}/chromosome.sizes:${BIN_SIZE} \
+    ${SRA_ID}/pairs/${SRA_ID}_filtered.pairs.gz \
+    ${SRA_ID}/cooler/${SRA_ID}_${BIN_SIZE}.cool
+if [ $? -ne 0 ]; then
+    echo "Error creating .cool file for ${SRA_ID}. Exiting."
+    exit 1
+fi
+echo "Successfully created .cool file: ${SRA_ID}/cooler/${SRA_ID}_${BIN_SIZE}.cool"
 
-declare -A ORIENTATIONS=(
-    ["inward"]="((strand1 == '+') & (strand2 == '+'))"
-    ["outward"]="((strand1 == '+') & (strand2 == '-'))"
-    ["tandem-entry"]="((strand1 == '-') & (strand2 == '+'))"
-    ["tandem-exit"]="((strand1 == '-') & (strand2 == '-'))"
-)
+# Step 2: Create multi-resolution .mcool file
+echo "Creating multi-resolution .mcool file..."
+cooler zoomify ${SRA_ID}/cooler/${SRA_ID}_${BIN_SIZE}.cool -o ${SRA_ID}/cooler/${SRA_ID}.mcool
+if [ $? -ne 0 ]; then
+    echo "Error during zoomify for ${SRA_ID}. Exiting."
+    exit 1
+fi
+echo "Successfully created multi-resolution .mcool file: ${SRA_ID}/cooler/${SRA_ID}.mcool"
 
-subset_orientation() {
-    local ORIENTATION_NAME=$1
-    local CONDITION=$2
-    local OUTPUT_FILE="input/pairs/${SRA_ID}_${ORIENTATION_NAME}.pairs.gz"
-
-    echo "Subsetting ${ORIENTATION_NAME} orientation..."
-    pairtools select "${CONDITION}" -o ${SRA_ID}/${OUTPUT_FILE} ${SRA_ID}/input/pairs/${SRA_ID}_filtered.pairs.gz
-    if [ $? -ne 0 ]; then
-        echo "Error selecting ${ORIENTATION_NAME} interactions for $SRA_ID. Exiting."
-        exit 1
-    fi
-    echo "Successfully created ${ORIENTATION_NAME} pairs: ${OUTPUT_FILE}"
-}
-
-for ORIENTATION_NAME in "${!ORIENTATIONS[@]}"; do
-    subset_orientation "${ORIENTATION_NAME}" "${ORIENTATIONS[$ORIENTATION_NAME]}"
-done
-
-# Step 2: Create .cool files
-echo "Creating .cool files for all orientations with bin size ${BIN_SIZE}..."
-
-create_cool_file() {
-    local INPUT_FILE=$1
-    local OUTPUT_FILE=$2
-
-    echo "Creating .cool file for ${INPUT_FILE}..."
-    cooler cload pairs \
-        --chrom1 2 \
-        --pos1 3 \
-        --chrom2 4 \
-        --pos2 5 \
-        ${SRA_ID}/input/chromosome.sizes:${BIN_SIZE} \
-        ${INPUT_FILE} \
-        ${OUTPUT_FILE}
-    if [ $? -ne 0 ]; then
-        echo "Error creating .cool file for ${INPUT_FILE}. Exiting."
-        exit 1
-    fi
-    echo "Successfully created .cool file: ${OUTPUT_FILE}"
-}
-
-# Process the main filtered file
-create_cool_file "input/pairs/${SRA_ID}_filtered.pairs.gz" "input/cooler/${SRA_ID}_filtered_${BIN_SIZE}.cool"
-
-# Process all orientation files
-for ORIENTATION_NAME in "${!ORIENTATIONS[@]}"; do
-    INPUT_FILE="${SRA_ID}/input/pairs/${SRA_ID}_${ORIENTATION_NAME}.pairs.gz"
-    OUTPUT_FILE="${SRA_ID}/input/cooler/${SRA_ID}_${ORIENTATION_NAME}_${BIN_SIZE}.cool"
-    create_cool_file "${INPUT_FILE}" "${OUTPUT_FILE}"
-done
-
-echo "Completed creating .cool files for ${SRA_ID}!"
+echo "cooler Processing completed for ${SRA_ID}!"

@@ -38,19 +38,19 @@ fi
 
 # Step 7: Extract chromosome sizes directly from SAM file
 echo "Extracting chromosome sizes from SAM file..."
-grep '^@SQ' ${SRA_ID}/input/${SRA_ID}.sam > temp_sizes.txt
-awk '{for(i=1;i<=NF;i++){if($i ~ /^SN:/){name=substr($i,4)}; if($i ~ /^LN:/){length=substr($i,4)} }; print name "\t" length}' temp_sizes.txt > ${SRA_ID}/input/chromosome.sizes
+grep '^@SQ' ${SRA_ID}/${SRA_ID}.sam > temp_sizes.txt
+sed -n 's/.*SN:\([^[:space:]]*\).*LN:\([^[:space:]]*\).*/\1\t\2/p' temp_sizes.txt > ${SRA_ID}/chromosome.sizes
 rm temp_sizes.txt
 
 # Parsing, sorting, deduplication
-pairtools parse2 -c ${SRA_ID}/input/chromosome.sizes \
-                 -o ${SRA_ID}/input/pairs/${SRA_ID}_parsed2.pairs.gz \
+pairtools parse2 -c ${SRA_ID}/chromosome.sizes \
+                 -o ${SRA_ID}/pairs/${SRA_ID}_parsed2.pairs.gz \
                  --max-insert-size 150 \
                  --drop-sam \
                  --drop-seq \
                  --output-parsed-alignments ${SRA_ID}/stats/${SRA_ID}_analysis.stats \
                  --output-stats ${SRA_ID}/stats/${SRA_ID}_output.stats \
-                 ${SRA_ID}/input/${SRA_ID}.sam
+                 ${SRA_ID}/${SRA_ID}.sam
                 
 if [ $? -ne 0 ]; then
     echo "Error parsing ligation events for $SRA_ID. Exiting."
@@ -59,10 +59,10 @@ fi
 
 # Step 9: Sorting ligation events
 echo "Sorting ligation events..."
-pairtools sort -o ${SRA_ID}/input/pairs/${SRA_ID}_sorted.pairs.gz \
+pairtools sort -o ${SRA_ID}/pairs/${SRA_ID}_sorted.pairs.gz \
                --nproc $THREADS \
                --tmpdir=./ \
-               ${SRA_ID}/input/pairs/${SRA_ID}_parsed2.pairs.gz
+               ${SRA_ID}/pairs/${SRA_ID}_parsed2.pairs.gz
 if [ $? -ne 0 ]; then
     echo "Error sorting ligation events for $SRA_ID. Exiting."
     exit 1
@@ -71,8 +71,8 @@ fi
 # Step 10: Detecting PCR duplications
 echo "Detecting PCR duplications..."
 pairtools dedup --mark dedup \
-                ${SRA_ID}/input/pairs/${SRA_ID}_sorted.pairs.gz \
-                -o ${SRA_ID}/input/pairs/${SRA_ID}_dedup.pairs.gz
+                ${SRA_ID}/pairs/${SRA_ID}_sorted.pairs.gz \
+                -o ${SRA_ID}/pairs/${SRA_ID}_dedup.pairs.gz
 if [ $? -ne 0 ]; then
     echo "Error detecting PCR duplications for $SRA_ID. Exiting."
     exit 1
@@ -81,8 +81,8 @@ fi
 # Step 11: Selecting unique-unique ligation events
 echo "Selecting unique-unique ligation events..."
 pairtools select '(pair_type == "UU")' \
-                 -o ${SRA_ID}/input/pairs/${SRA_ID}_filtered.pairs.gz \
-                 ${SRA_ID}/input/pairs/${SRA_ID}_dedup.pairs.gz
+                 -o ${SRA_ID}/pairs/${SRA_ID}_filtered.pairs.gz \
+                 ${SRA_ID}/pairs/${SRA_ID}_dedup.pairs.gz
 if [ $? -ne 0 ]; then
     echo "Error selecting unique-unique ligation events for $SRA_ID. Exiting."
     exit 1

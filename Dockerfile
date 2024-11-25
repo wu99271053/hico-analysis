@@ -33,9 +33,7 @@ RUN /miniconda3/bin/conda config --add channels defaults && \
     pairtools \
     cooler \
     sra-tools \
-    ncbi-datasets-cli \
     genomepy \
-    samtools \
     && /miniconda3/bin/conda clean -a -y
 
     

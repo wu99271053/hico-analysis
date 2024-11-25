@@ -7,18 +7,7 @@ THREADS=4
 TRIM_LENGTH=35  # Default trimming length
 
 # Function to create directories
-create_directories() {
-    echo "Creating directories for ${SRA_ID}..."
-    mkdir -p ${SRA_ID}/input
-    mkdir -p ${SRA_ID}/output
-    mkdir -p ${SRA_ID}/stats
-}
 
-# Parse arguments and validate...
-# (rest of your argument parsing remains unchanged)
-
-# Create required directories
-create_directories
 # Function to display help
 function show_help() {
     echo "Usage: $0 --sra_id <SRA_ID> [--threads <NUM_THREADS>] [--trim_length <LENGTH>]"
@@ -86,6 +75,10 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+
+rm ${SRA_ID}_1.fastq
+
+rm ${SRA_ID}_2.fastq
 # Final output
 echo "FASTQ files for $SRA_ID have been successfully downloaded, converted, and compressed using pigz."
 
@@ -119,12 +112,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-mv ${SRA_ID}_1.fastq.gz ${SRA_ID}/input/
-mv ${SRA_ID}_2.fastq.gz ${SRA_ID}/input/
-mv intermediate_${SRA_ID}_1.fastq.gz ${SRA_ID}/input/
-mv intermediate_${SRA_ID}_2.fastq.gz ${SRA_ID}/input/
-mv ${SRA_ID}_input_1.fastq.gz ${SRA_ID}/input/
-mv ${SRA_ID}_input_2.fastq.gz ${SRA_ID}/input/
+mv ${SRA_ID}_1.fastq.gz ${SRA_ID}/fastq/
+mv ${SRA_ID}_2.fastq.gz ${SRA_ID}/fastq/
+mv intermediate_${SRA_ID}_1.fastq.gz ${SRA_ID}/fastq/
+mv intermediate_${SRA_ID}_2.fastq.gz ${SRA_ID}/fastq/
+mv ${SRA_ID}_input_1.fastq.gz ${SRA_ID}/fastq/
+mv ${SRA_ID}_input_2.fastq.gz ${SRA_ID}/fastq/
 mv ${SRA_ID}_adaptor_removal_report.cutadapt.json ${SRA_ID}/stats/
 mv ${SRA_ID}_fixed_length.cutadapt.json ${SRA_ID}/stats/
 
