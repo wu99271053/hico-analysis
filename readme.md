@@ -7,7 +7,5 @@ the hico data is comparatively larger than normal hi-c files. with keeping all t
 the sam file is huge (~200 gb). however the final product small in size.
 
 
-docker image is provided for installing necessary package, it is also possible to install using the yml file.
-
-
+docker image is provided for installing necessary package, it is also possible to install using the yml file
 
