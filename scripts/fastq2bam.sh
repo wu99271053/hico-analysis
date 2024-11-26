@@ -57,18 +57,20 @@ if [ $? -ne 0 ]; then
 fi
 
 # Step 3: Alignment with Bowtie2 
-echo "Running Bowtie2 alignment..."
+echo "Running Bowtie2 alignment and converting directly to BAM..."
+
 bowtie2 -x ${SRA_ID}/sacCer3_index \
         -1 ${SRA_ID}/fastq/${SRA_ID}_input_1.fastq.gz \
         -2 ${SRA_ID}/fastq/${SRA_ID}_input_2.fastq.gz \
-        -S ${SRA_ID}/${SRA_ID}.sam \
         $MODE \
-        -p $THREADS
+        -p $THREADS | \
+samtools view -bhS - > ${SRA_ID}/${SRA_ID}.bam
+
 if [ $? -ne 0 ]; then
     echo "Error during Bowtie2 alignment for $SRA_ID. Exiting."
     exit 1
 fi
 
-echo "Bowtie2 alignment completed successfully for $SRA_ID!"
+echo "Bowtie2 alignment and BAM conversion completed successfully for $SRA_ID!"
 
 

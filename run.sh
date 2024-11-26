@@ -58,7 +58,7 @@ fi
 
 # Step 3: Call fastq to sam processing script
 echo "Starting fastq to sam conversion..."
-bash scripts/fastq2sam.sh --sra_id ${SRA_ID} --threads ${THREADS}
+bash scripts/fastq2bam.sh --sra_id ${SRA_ID} --threads ${THREADS}
 if [ $? -ne 0 ]; then
     echo "Error during fastq to sam conversion for ${SRA_ID}. Exiting."
     exit 1
@@ -66,7 +66,7 @@ fi
 
 # Step 4: Call sam to pairs processing script
 echo "Starting sam to pairs processing..."
-bash scripts/sam2pairs.sh --sra_id ${SRA_ID} --threads ${THREADS}
+bash scripts/bam2pairs.sh --sra_id ${SRA_ID} --threads ${THREADS}
 if [ $? -ne 0 ]; then
     echo "Error during sam to pairs processing for ${SRA_ID}. Exiting."
     exit 1

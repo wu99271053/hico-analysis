@@ -36,13 +36,24 @@ if [ -z "$SRA_ID" ]; then
     exit 1
 fi
 
-# Step 7: Extract chromosome sizes directly from SAM file
-echo "Extracting chromosome sizes from SAM file..."
-grep '^@SQ' ${SRA_ID}/${SRA_ID}.sam > temp_sizes.txt
-sed -n 's/.*SN:\([^[:space:]]*\).*LN:\([^[:space:]]*\).*/\1\t\2/p' temp_sizes.txt > ${SRA_ID}/chromosome.sizes
-rm temp_sizes.txt
+# Extract chromosome sizes directly from BAM file
+echo "Extracting chromosome sizes from BAM file header..."
+
+samtools view -H ${SRA_ID}/${SRA_ID}.bam | grep '^@SQ' | \
+sed -n 's/.*SN:\([^[:space:]]*\).*LN:\([^[:space:]]*\).*/\1\t\2/p' > ${SRA_ID}/chromosome.sizes
+
+if [ $? -ne 0 ]; then
+    echo "Error extracting chromosome sizes from BAM file for $SRA_ID. Exiting."
+    exit 1
+fi
+
+echo "Chromosome sizes extracted successfully for $SRA_ID!"
+
 
 # Parsing, sorting, deduplication
+
+echo "parsing alignment into ligation event."
+
 pairtools parse2 -c ${SRA_ID}/chromosome.sizes \
                  -o ${SRA_ID}/pairs/${SRA_ID}_parsed2.pairs.gz \
                  --max-insert-size 150 \
@@ -81,7 +92,7 @@ fi
 # Step 11: Selecting unique-unique ligation events
 echo "Selecting unique-unique ligation events..."
 pairtools select '(pair_type == "UU")' \
-                 -o ${SRA_ID}/pairs/${SRA_ID}_filtered.pairs.gz \
+                 -o ${SRA_ID}/pairs/${SRA_ID}.pairs.gz \
                  ${SRA_ID}/pairs/${SRA_ID}_dedup.pairs.gz
 if [ $? -ne 0 ]; then
     echo "Error selecting unique-unique ligation events for $SRA_ID. Exiting."
@@ -95,5 +106,5 @@ echo "Output files:"
 echo "  Parsed pairs: ${SRA_ID}_parsed2.pairs.gz"
 echo "  Sorted pairs: ${SRA_ID}_sorted.pairs.gz"
 echo "  Deduplicated pairs: ${SRA_ID}_dedup.pairs.gz"
-echo "  Filtered pairs: ${SRA_ID}_filtered.pairs.gz"
+echo "  Filtered pairs: ${SRA_ID}.pairs.gz"
 echo "  Stats: ${SRA_ID}_parsed.stats, ${SRA_ID}_output.stats"

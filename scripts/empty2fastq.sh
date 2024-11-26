@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Default values for parameters
-# Default values for parameters
 SRA_ID=""
 THREADS=4
-TRIM_LENGTH=35  # Default trimming length
+max_length=35
+min_length=16
 
 # Function to create directories
 
@@ -28,7 +28,6 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         --sra_id) SRA_ID="$2"; shift ;;
         --threads) THREADS="$2"; shift ;;
-        --trim_length) TRIM_LENGTH="$2"; shift ;;
         -h|--help) show_help; exit 0 ;;
         *) echo "Unknown parameter passed: $1"; show_help; exit 1 ;;
     esac
@@ -61,7 +60,22 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Step 3: Compress FASTQ files using pigz
+# Step 3: Remove adaptors with Cutadapt
+echo "Removing hi-co adaptors with Cutadapt"
+cutadapt -a CTGCTGACGCTATGTACTCCCGCGGGAGTACATAGCGTCAGCAGT \
+         -A ACTGCTGACGCTATGTACTCCCGCGGGAGTACATAGCGTCAGCAG \
+         -o ${SRA_ID}_input_1.fastq.gz \
+         -p ${SRA_ID}_input_2.fastq.gz \
+         ${SRA_ID}_1.fastq ${SRA_ID}_2.fastq
+         -e 0.2 -j ${THREADS} -m ${min_length} -M ${max_length} --discard-untrimmed 
+         --json=${SRA_ID}_adaptor_removal_report.cutadapt.json
+
+if [ $? -ne 0 ]; then
+    echo "Error during adaptor removal for $SRA_ID. Exiting."
+    exit 1
+fi
+
+# Step 4: Compress FASTQ files using pigz
 echo "Compressing FASTQ files for $SRA_ID using pigz..."
 pigz -p $THREADS ${SRA_ID}_1.fastq
 if [ $? -ne 0 ]; then
@@ -75,52 +89,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-
-rm ${SRA_ID}_1.fastq
-
-rm ${SRA_ID}_2.fastq
 # Final output
-echo "FASTQ files for $SRA_ID have been successfully downloaded, converted, and compressed using pigz."
-
-
-# Step 4: Remove adaptors with Cutadapt
-echo "Removing adaptors with Cutadapt..."
-cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA \
-         -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
-         -o intermediate_${SRA_ID}_1.fastq.gz \
-         -p intermediate_${SRA_ID}_2.fastq.gz \
-         ${SRA_ID}_1.fastq.gz ${SRA_ID}_2.fastq.gz \
-         -e 0.2 -j $THREADS \
-         --discard-untrimmed \
-         --json=${SRA_ID}_adaptor_removal_report.cutadapt.json
-if [ $? -ne 0 ]; then
-    echo "Error during adaptor removal for $SRA_ID. Exiting."
-    exit 1
-fi
-
-# Step 6: Trim reads to fixed length with Cutadapt
-echo "Trimming reads to fixed length (${TRIM_LENGTH}bp) with Cutadapt..."
-cutadapt -l $TRIM_LENGTH \
-         -o ${SRA_ID}_input_1.fastq.gz \
-         -L $TRIM_LENGTH \
-         -p ${SRA_ID}_input_2.fastq.gz \
-         intermediate_${SRA_ID}_1.fastq.gz intermediate_${SRA_ID}_2.fastq.gz \
-         -j $THREADS \
-         --json=${SRA_ID}_fixed_length.cutadapt.json
-if [ $? -ne 0 ]; then
-    echo "Error during fixed-length trimming for $SRA_ID. Exiting."
-    exit 1
-fi
-
 mv ${SRA_ID}_1.fastq.gz ${SRA_ID}/fastq/
 mv ${SRA_ID}_2.fastq.gz ${SRA_ID}/fastq/
-mv intermediate_${SRA_ID}_1.fastq.gz ${SRA_ID}/fastq/
-mv intermediate_${SRA_ID}_2.fastq.gz ${SRA_ID}/fastq/
 mv ${SRA_ID}_input_1.fastq.gz ${SRA_ID}/fastq/
 mv ${SRA_ID}_input_2.fastq.gz ${SRA_ID}/fastq/
 mv ${SRA_ID}_adaptor_removal_report.cutadapt.json ${SRA_ID}/stats/
-mv ${SRA_ID}_fixed_length.cutadapt.json ${SRA_ID}/stats/
-
 
 echo "Adaptor removal and trimming completed successfully for $SRA_ID!"
 echo "Final files are located in input/fastq, and statistics are in stats/."
