@@ -54,7 +54,7 @@ fi
 
 # Step 2: Convert SRA to FASTQ
 echo "Converting SRA to FASTQ..."
-fasterq-dump $SRA_ID -e $THREADS
+fasterq-dump $SRA_ID -e $THREADS -p
 if [ $? -ne 0 ]; then
     echo "Error converting $SRA_ID to FASTQ. Exiting."
     exit 1
@@ -62,8 +62,8 @@ fi
 
 # Step 3: Remove adaptors with Cutadapt
 echo "Removing hi-co adaptors with Cutadapt"
-cutadapt -a CTGCTGACGCTATGTACTCCCGCGGGAGTACATAGCGTCAGCAGT \
-         -A ACTGCTGACGCTATGTACTCCCGCGGGAGTACATAGCGTCAGCAG \
+cutadapt -a ACTGCTGACGCTATGTACTCCCGCGGGAGTACATAGCGTCAGCAGT \
+         -A ACTGCTGACGCTATGTACTCCCGCGGGAGTACATAGCGTCAGCAGT \
          -o ${SRA_ID}_input_1.fastq.gz \
          -p ${SRA_ID}_input_2.fastq.gz \
          ${SRA_ID}_1.fastq ${SRA_ID}_2.fastq

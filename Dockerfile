@@ -1,5 +1,5 @@
 # Use a lightweight base image
-FROM --platform=linux/amd64 ubuntu:20.04
+FROM ubuntu:20.04
 
 # Set environment variables
 ENV PATH=/miniconda3/bin:$PATH

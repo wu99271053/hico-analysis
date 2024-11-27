@@ -50,7 +50,7 @@ create_directories
 
 # Step 2: Call fastq processing script
 echo "Starting fastq processing..."
-bash scripts/fastq.sh --sra_id ${SRA_ID} --threads ${THREADS}
+bash scripts/1_empty2fastq.sh --sra_id ${SRA_ID} --threads ${THREADS}
 if [ $? -ne 0 ]; then
     echo "Error during fastq processing for ${SRA_ID}. Exiting."
     exit 1
@@ -58,7 +58,7 @@ fi
 
 # Step 3: Call fastq to sam processing script
 echo "Starting fastq to sam conversion..."
-bash scripts/fastq2bam.sh --sra_id ${SRA_ID} --threads ${THREADS}
+bash scripts/2_fastq2bam.sh --sra_id ${SRA_ID} --threads ${THREADS}
 if [ $? -ne 0 ]; then
     echo "Error during fastq to sam conversion for ${SRA_ID}. Exiting."
     exit 1
@@ -66,7 +66,7 @@ fi
 
 # Step 4: Call sam to pairs processing script
 echo "Starting sam to pairs processing..."
-bash scripts/bam2pairs.sh --sra_id ${SRA_ID} --threads ${THREADS}
+bash scripts/3_bam2pairs.sh --sra_id ${SRA_ID} --threads ${THREADS}
 if [ $? -ne 0 ]; then
     echo "Error during sam to pairs processing for ${SRA_ID}. Exiting."
     exit 1
@@ -74,7 +74,7 @@ fi
 
 # Step 5: Call pairs to cooler processing script
 echo "Starting pairs to cooler processing..."
-bash scripts/pairs2cool.sh --sra_id ${SRA_ID} --bin_size ${BIN_SIZE}
+bash scripts/4_pairs2mcool.sh --sra_id ${SRA_ID} --bin_size ${BIN_SIZE}
 if [ $? -ne 0 ]; then
     echo "Error during pairs to cooler processing for ${SRA_ID}. Exiting."
     exit 1
@@ -82,7 +82,7 @@ fi
 
 # Step 6: Call Python script to process cooler to npz
 echo "Converting cooler to npz..."
-python3 scripts/coolertonpz.py --sra_id ${SRA_ID}
+python3 scripts/5_mcool2npz.py --sra_id ${SRA_ID}
 if [ $? -ne 0 ]; then
     echo "Error converting cooler to npz for ${SRA_ID}. Exiting."
     exit 1

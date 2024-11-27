@@ -50,7 +50,7 @@ fi
 
 # Step 2: Build the Bowtie2 index
 echo "Building Bowtie2 index for sacCer3..."
-bowtie2-build ./${SRA_ID}/sacCer3/sacCer3.fa ${SRA_ID}/sacCer3_index
+bowtie2-build ./${SRA_ID}/sacCer3/sacCer3.fa sacCer3_index
 if [ $? -ne 0 ]; then
     echo "Error building Bowtie2 index for sacCer3. Exiting."
     exit 1
@@ -59,7 +59,7 @@ fi
 # Step 3: Alignment with Bowtie2 
 echo "Running Bowtie2 alignment and converting directly to BAM..."
 
-bowtie2 -x ${SRA_ID}/sacCer3_index \
+bowtie2 -x sacCer3_index \
         -1 ${SRA_ID}/fastq/${SRA_ID}_input_1.fastq.gz \
         -2 ${SRA_ID}/fastq/${SRA_ID}_input_2.fastq.gz \
         $MODE \
