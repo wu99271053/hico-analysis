@@ -47,20 +47,20 @@ cooler cload pairs \
     --pos2 5 \
     ${SRA_ID}/chromosome.sizes:${BIN_SIZE} \
     ${SRA_ID}/${SRA_ID}.pairs.gz \
-    ${SRA_ID}/${SRA_ID}_${BIN_SIZE}.cool
+    ${SRA_ID}/${SRA_ID}.cool
 if [ $? -ne 0 ]; then
     echo "Error creating .cool file for ${SRA_ID}. Exiting."
     exit 1
 fi
-echo "Successfully created .cool file: ${SRA_ID}/${SRA_ID}_${BIN_SIZE}.cool"
+echo "Successfully created .cool file: ${SRA_ID}/${SRA_ID}.cool"
 
 # Step 2: Create multi-resolution .mcool file
 echo "Creating multi-resolution .mcool file..."
-cooler zoomify ${SRA_ID}/${SRA_ID}_${BIN_SIZE}.cool -o ${SRA_ID}/${SRA_ID}.mcool -r 128,256,512,1024
+cooler zoomify ${SRA_ID}/${SRA_ID}.cool -o ${SRA_ID}/${SRA_ID}.mcool -r 128,256,512,1024
 if [ $? -ne 0 ]; then
     echo "Error during zoomify for ${SRA_ID}. Exiting."
     exit 1
 fi
-echo "Successfully created multi-resolution .mcool file: ${SRA_ID}/cooler/${SRA_ID}.mcool"
+echo "Successfully created multi-resolution .mcool file: ${SRA_ID}/${SRA_ID}.mcool"
 
 echo "cooler Processing completed for ${SRA_ID}!"
