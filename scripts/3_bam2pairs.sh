@@ -53,58 +53,24 @@ echo "Chromosome sizes extracted successfully for $SRA_ID!"
 # Parsing, sorting, deduplication
 
 echo "parsing alignment into ligation event."
-
+echo "Processing BAM file to pairs for ${SRA_ID}..."
 pairtools parse2 -c ${SRA_ID}/chromosome.sizes \
-                 -o ${SRA_ID}/pairs/${SRA_ID}_parsed2.pairs.gz \
                  --max-insert-size 150 \
                  --drop-sam \
                  --drop-seq \
-                 --output-parsed-alignments ${SRA_ID}/stats/${SRA_ID}_analysis.stats \
-                 --output-stats ${SRA_ID}/stats/${SRA_ID}_output.stats \
-                 ${SRA_ID}/${SRA_ID}.sam
-                
-if [ $? -ne 0 ]; then
-    echo "Error parsing ligation events for $SRA_ID. Exiting."
-    exit 1
-fi
-
-# Step 9: Sorting ligation events
-echo "Sorting ligation events..."
-pairtools sort -o ${SRA_ID}/pairs/${SRA_ID}_sorted.pairs.gz \
-               --nproc $THREADS \
-               --tmpdir=./ \
-               ${SRA_ID}/pairs/${SRA_ID}_parsed2.pairs.gz
-if [ $? -ne 0 ]; then
-    echo "Error sorting ligation events for $SRA_ID. Exiting."
-    exit 1
-fi
-
-# Step 10: Detecting PCR duplications
-echo "Detecting PCR duplications..."
-pairtools dedup --mark dedup \
-                ${SRA_ID}/pairs/${SRA_ID}_sorted.pairs.gz \
-                -o ${SRA_ID}/pairs/${SRA_ID}_dedup.pairs.gz
-if [ $? -ne 0 ]; then
-    echo "Error detecting PCR duplications for $SRA_ID. Exiting."
-    exit 1
-fi
-
-# Step 11: Selecting unique-unique ligation events
-echo "Selecting unique-unique ligation events..."
+                 --output-parsed-alignments ${SRA_ID}/${SRA_ID}_analysis.stats \
+                 --output-stats ${SRA_ID}/${SRA_ID}_parse.stats \
+                 ${SRA_ID}/${SRA_ID}.bam | \
+pairtools sort --nproc $THREADS --tmpdir=./ | \
+pairtools dedup --output-stats ${SRA_ID}/${SRA_ID}_dedup.stats | \
 pairtools select '(pair_type == "UU")' \
-                 -o ${SRA_ID}/pairs/${SRA_ID}.pairs.gz \
-                 ${SRA_ID}/pairs/${SRA_ID}_dedup.pairs.gz
+                 -o ${SRA_ID}/${SRA_ID}.pairs.gz
+
 if [ $? -ne 0 ]; then
-    echo "Error selecting unique-unique ligation events for $SRA_ID. Exiting."
+    echo "Error processing pairs for ${SRA_ID}. Exiting."
     exit 1
 fi
-
 
 # Final Output
 echo "Completed preprocessing for ${SRA_ID}!"
-echo "Output files:"
-echo "  Parsed pairs: ${SRA_ID}_parsed2.pairs.gz"
-echo "  Sorted pairs: ${SRA_ID}_sorted.pairs.gz"
-echo "  Deduplicated pairs: ${SRA_ID}_dedup.pairs.gz"
-echo "  Filtered pairs: ${SRA_ID}.pairs.gz"
-echo "  Stats: ${SRA_ID}_parsed.stats, ${SRA_ID}_output.stats"
+
