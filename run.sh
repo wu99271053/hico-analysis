@@ -39,16 +39,8 @@ if [ -z "$SRA_ID" ]; then
     exit 1
 fi
 
-# Function to create necessary directories
-create_directories() {
-    echo "Creating directories for ${SRA_ID}..."
-    mkdir -p ${SRA_ID}/{cooler,fastq,npz,pairs,stats}
-}
 
-# Step 1: Create directories
-create_directories
-
-# Step 2: Call fastq processing script
+# Step 1: Call fastq processing script
 echo "Starting fastq processing..."
 bash scripts/1_empty2fastq.sh --sra_id ${SRA_ID} --threads ${THREADS}
 if [ $? -ne 0 ]; then
