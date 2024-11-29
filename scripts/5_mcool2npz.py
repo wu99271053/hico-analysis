@@ -26,7 +26,7 @@ class HiCOol:
         data = {}
 
         for resolution in self.resolutions:
-            cooler = Cooler(f'{self.mcool_path}::resolutions/{resolution}')
+            cooler = Cooler(f'{self.mcool_path}::resolutions/'+str(resolution))
             resolution_data = {}
 
             for chrom in cooler.chromnames:
